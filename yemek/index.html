@@ -1,0 +1,152 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+	<meta charset="UTF-8" />
+	<title>Phaser - Making your first game, part 1</title>
+    <script src="./lib/phaser.js"></script>
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<script type="text/javascript">
+
+var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update });
+var score = 0;
+var scoreText;
+var star;
+var diamond;
+var firstaid;
+var clickArray = [];
+var mouseBody;
+var mouseConstraint; 
+
+
+function preload() {
+	game.load.image('sky', 'assets/sky.png');
+    game.load.image('ground', 'assets/platform.png');
+    game.load.image('star', 'assets/star.png');
+    game.load.image('diamond', 'assets/diamond.png');
+    game.load.image('firstaid', 'assets/firstaid.png');
+
+    game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
+}
+
+function create() {
+
+    game.physics.startSystem(Phaser.Physics.P2JS);
+
+    //  A simple background for our game
+    game.add.sprite(0, 0, 'sky');
+    
+
+    // The player and its settings
+    star = game.add.sprite(32, 32, 'star');
+    star.inputEnabled = true;
+    star.input.enableDrag(false,true);
+    star.events.onInputDown.add(function(s){console.log('clicked',s.name,s.renderOrderID)});
+
+    diamond = game.add.sprite(32, 64, 'diamond');
+    diamond.inputEnabled = true;
+    diamond.input.enableDrag(false,true);   
+    diamond.events.onInputDown.add(function(s){console.log('clicked',s.name,s.renderOrderID)});
+
+    clickArray.push(diamond.body);
+    clickArray.push(star.body);
+
+    scoreText = game.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
+
+    mouseBody = new p2.Body();
+    game.physics.p2.world.addBody(mouseBody);
+        
+    // attach pointer events
+    game.input.onDown.add(click, this);
+    game.input.onUp.add(release, this);
+    game.input.addMoveCallback(move, this);
+}
+
+
+
+function click(pointer) {
+
+    console.log(clickArray);
+    var bodies = game.physics.p2.hitTest(pointer.position, clickArray);
+    console.log("Bodies" + clickArray);
+    // p2 uses different coordinate system, so convert the pointer position to p2's coordinate system
+    var physicsPos = [game.physics.p2.pxmi(pointer.position.x), game.physics.p2.pxmi(pointer.position.y)];
+    
+    if (bodies.length)
+    {
+        var clickedBody = bodies[0];
+        console.log("Clicked body " + clickedBody);
+        
+        var localPointInBody = [0, 0];
+        // this function takes physicsPos and coverts it to the body's local coordinate system
+        clickedBody.toLocalFrame(localPointInBody, physicsPos);
+        
+        // use a revoluteContraint to attach mouseBody to the clicked body
+        mouseConstraint = this.game.physics.p2.createRevoluteConstraint(mouseBody, [0, 0], clickedBody, [game.physics.p2.mpxi(localPointInBody[0]), game.physics.p2.mpxi(localPointInBody[1]) ]);
+    }   
+
+}
+
+function release() {
+
+    // remove constraint from object's body
+    game.physics.p2.removeConstraint(mouseConstraint);
+
+}
+
+function move(pointer) {
+
+    // p2 uses different coordinate system, so convert the pointer position to p2's coordinate system
+    mouseBody.position[0] = game.physics.p2.pxmi(pointer.position.x);
+    mouseBody.position[1] = game.physics.p2.pxmi(pointer.position.y);
+
+}
+
+
+function update() {
+    console.log(star);
+    console.log(diamond);
+    console.log("Diamond and star" + (star && diamond).toString());
+    if (star.alive && diamond.alive && checkOverlap(star, diamond))
+    {
+        firstaid = game.add.sprite(star.world.x, star.world.y, 'firstaid');
+        firstaid.inputEnabled = true;
+        firstaid.input.enableDrag(false,true);   
+        firstaid.events.onInputDown.add(function(s){console.log('clicked',s.name,s.renderOrderID)});
+        clickArray = [];
+        clickArray.push(firstaid.body);
+        console.log(star);
+        console.log(firstaid);
+        star.destroy();
+        diamond.destroy();
+
+        scoreText.text = 'Drag the sprites. Overlapping: true';
+    }
+    else
+    {
+        scoreText.text = 'Drag the sprites. Overlapping: false';
+    }
+
+}
+
+function checkOverlap(spriteA, spriteB) {
+
+    var boundsA = spriteA.getBounds();
+    var boundsB = spriteB.getBounds();
+
+    return Phaser.Rectangle.intersects(boundsA, boundsB);
+
+}
+
+
+
+</script>
+
+</body>
+</html>

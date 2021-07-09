@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="./lib/phaser.js"></script>
+</head>
+<body>
+
+<script>
+    var config = {
+        type: Phaser.AUTO,
+        width: 1500,
+        height: 800,
+        backgroundColor: '#1b1464',
+        parent: 'phaser-example',
+        physics: {
+            default: 'arcade',
+            arcade: {
+                debug: true
+            }
+        },
+        scene: {
+            preload: preload,
+            create: create,
+            update: update
+        }
+    };
+
+    var game = new Phaser.Game(config);
+    var gameScene;
+    var yumurta;
+    var star;
+    var firstaid;
+
+    function preload ()
+    {
+        this.load.image('yumurta', 'assets/item/yumurta.jpg');
+        this.load.image('tava', 'assets/tools/tava.jpg');
+        this.load.image('yumurtatava', 'assets/cooking/yumurtatava.jpg');
+        this.load.image('board', 'assets/tahta.PNG');
+        gameScene = game.scene.scenes[0];
+
+
+    }
+
+    function create ()
+    {
+
+        this.add.image(0, 0, 'board').setOrigin(0, 0).setScale(2.6);
+
+        yumurta = gameScene.physics.add.sprite(200, 200, 'yumurta').setScale(0.1);
+        yumurta.setInteractive({draggable:true});
+        yumurta.on('pointerover', function () {
+
+            yumurta.setTint(0x7878ff);
+
+        });
+
+        yumurta.on('pointerout', function () {
+
+            yumurta.clearTint();
+
+        });
+
+        tava = gameScene.physics.add.sprite(600, 200, 'tava').setScale(0.4);
+        tava.setInteractive({draggable:true});
+        tava.on('pointerover', function () {
+
+            tava.setTint(0x7878ff);
+
+        });
+
+        tava.on('pointerout', function () {
+
+            tava.clearTint();
+
+        });
+
+        yumurta.setVelocity(0, 0).setBounce(0, 0).setCollideWorldBounds(true).setGravityY(0);
+        gameScene.physics.add.collider(yumurta, tava);
+
+        gameScene.input.on('drag', function (pointer, gameObject, dragX, dragY) {
+
+            gameObject.x = dragX;
+            gameObject.y = dragY;
+
+        });
+
+
+
+
+    }
+
+    function removeOverlappedObjects(yumurta, tava) {
+        yumurta.destroy(true);
+        tava.destroy(true);
+    }
+
+    function createNewObject(x, y) {
+        yumurtatava = gameScene.physics.add.sprite(x, y, 'yumurtatava').setScale(0.3);
+        yumurtatava.setInteractive({draggable:true});
+        yumurtatava.on('pointerover', function () {
+
+            yumurtatava.setTint(0x7878ff);
+
+        });
+
+        yumurtatava.on('pointerout', function () {
+
+            yumurtatava.clearTint();
+
+        });
+    }
+
+    function update(){
+
+
+        if(yumurta.active && checkOverlap(yumurta , tava)){
+            console.log("dokundu");
+            createNewObject(yumurta.x, yumurta.y);
+            removeOverlappedObjects(yumurta, tava);
+        }
+    }
+
+    function checkOverlap(spriteA, spriteB) {
+
+        var boundsA = spriteA.getBounds();
+        var boundsB = spriteB.getBounds();
+
+        return Phaser.Geom.Intersects.RectangleToRectangle(boundsA, boundsB);
+
+    }
+
+
+
+</script>
+
+</body>
+</html>
